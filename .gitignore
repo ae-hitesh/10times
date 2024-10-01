@@ -1,0 +1,4 @@
+.env
+node_modules
+event-scraper.log
+scanner.log
