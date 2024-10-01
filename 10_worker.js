@@ -7,6 +7,7 @@ const {
   createEvent
 } = require('./utility.js');
 const amqp = require('amqplib');
+const { checkIfEventInSource } = require('../helper/functions.js')
 
 const rabbitmqUrl = process.env.RABBITMQ_URL || "amqp://rabuser:test@104.236.207.192";
 const queueName = process.env.QUEUE_NAME || "10times_events";
@@ -36,7 +37,6 @@ async function processUrlFromQueue(channel) {
 
     try {
       const eventData = await advancedEventScraper(url);
-      console.log(eventData);return;
       if (!eventData) throw new Error('No event data retrieved');
 
       if (!eventData.city && !eventData.latitude && !eventData.longitude) {

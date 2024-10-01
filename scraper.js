@@ -1,8 +1,7 @@
-const axios = require("axios");
-const cheerio = require("cheerio");
 const puppeteer = require("puppeteer-extra");
 const StealthPlugin = require("puppeteer-extra-plugin-stealth");
 const { getCityData, getNearbyLocations, updateEventDataWithCityInfo, convertToISO8601 } = require('./utility');
+const cheerio = require("cheerio");
 
 puppeteer.use(StealthPlugin());
 
@@ -33,65 +32,6 @@ async function retry(fn, retries = MAX_RETRIES) {
   }
 }
 
-async function getPublicIP() {
-  try {
-    const response = await axios.get("https://ipv4.webshare.io/", {
-      proxy: {
-        protocol: 'http',
-        host: "p.webshare.io",
-        port: 80,
-        auth: {
-          username: "rI5x2n-ttl-0",
-          password: "Z9rSg4KSOj0FS9e",
-        },
-      },
-    });
-    console.log("Current IP Address:", response.data);
-  } catch (error) {
-    console.error("Failed to retrieve IP address:", error.message);
-  }
-}
-
-async function scrapeWithAxios(url) {
-  const userAgent = getRandomUserAgent();
-  const axiosConfig = {
-    headers: {
-      "User-Agent": userAgent,
-      "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
-      "Accept-Language": "en-US,en;q=0.5",
-      "Accept-Encoding": "gzip, deflate, br",
-      "Connection": "keep-alive",
-      "Upgrade-Insecure-Requests": "1",
-      "Cache-Control": "max-age=0",
-    },
-    proxy: {
-      protocol: 'http',
-      host: "isp.us-pr.plainproxies.com",
-      port: 8080,
-      auth: {
-        username: "owqvekkf-rotate",
-        password: "12cvzre3ddzc",
-      },
-    },
-    timeout: 30000,
-    maxRedirects: 5,
-  };
-
-  try {
-    console.log("Axios: Sending request with User-Agent:", userAgent);
-    const response = await axios.get(url, axiosConfig);
-    console.log("Axios: Response received with status code:", response.status);
-    return response.data;
-  } catch (error) {
-    console.error("Axios scraping failed:", error.message);
-    if (error.response) {
-      console.error("Response status:", error.response.status);
-      console.error("Response headers:", error.response.headers);
-    }
-    throw error;
-  }
-}
-
 async function scrapeWithPuppeteer(url) {
   let browser = null;
   try {
@@ -101,7 +41,8 @@ async function scrapeWithPuppeteer(url) {
         '--no-sandbox',
         '--disable-setuid-sandbox',
         '--disable-accelerated-2d-canvas',
-        '--disable-gpu'
+        '--disable-gpu',
+        `--proxy-server=http://isp.us-pr.plainproxies.com:8080`
       ],
       ignoreHTTPSErrors: true
     });
@@ -359,16 +300,7 @@ async function parseHtml(html) {
 }
 
 async function advancedEventScraper(url) {
-  let html;
-
-  // Attempt to scrape with Axios first
-  try {
-    html = await retry(() => scrapeWithAxios(url));
-  } catch (error) {
-    console.log("Axios scraping failed. Falling back to Puppeteer.");
-    html = await retry(() => scrapeWithPuppeteer(url));
-  }
-
+  const html = await retry(() => scrapeWithPuppeteer(url));
   const result = await parseHtml(html);
   return result;
 }
